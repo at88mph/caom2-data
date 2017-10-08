@@ -1,0 +1,20 @@
+version: '3'
+services:
+  caom2-data:
+    image: at88mph/caom2-data
+    ports:
+      - 3000:3000
+    networks:
+      - caom2_data
+    volumes:
+      - ./:/home/node/app
+    environment:
+      - VAULT_ENDPOINT=${VAULT_ENDPOINT}
+      - VAULT_ACCESS_TOKEN_1=${VAULT_ACCESS_TOKEN_1}
+      - VAULT_ACCESS_TOKEN_2=${VAULT_ACCESS_TOKEN_2}
+      - VAULT_ACCESS_TOKEN_3=${VAULT_ACCESS_TOKEN_3}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ENDPOINT_PORT=${S3_ENDPOINT_PORT}
+
+networks:
+  caom2_data:
