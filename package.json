@@ -16,7 +16,7 @@
     "jsonwebtoken": "^8.0.1",
     "minio": "^3.2.1",
     "morgan": "~1.8.1",
-    "node-vault": "node-vault.tar.gz",
+    "node-vault": "../node-vault",
     "request": "^2.83.0",
     "serve-favicon": "~2.4.2"
   }

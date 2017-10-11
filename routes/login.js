@@ -15,7 +15,6 @@ var vaultOptions = {
 var vault = require('node-vault')(vaultOptions);
 
 // init vault server
-// valut.init({secret_shares: 1, secret_threshold: 1}).then...
 vault.initialized().then(function (result) {
     if (result.initialized === false) {
         vault.init({secret_shares: 3, secret_threshold: 3});
@@ -47,34 +46,9 @@ function authenticate(payload, res) {
     else {
         var mountPoint = 'auth';
 
-        vault.auths({followAllRedirects: true})
-            .then(function (result) {
-                // Check if LDAP is already enabled.
-                if (result.hasOwnProperty('ldap/')) {
-                    return undefined;
-                }
-                else {
-                    return vault.enableAuth({
-                                                mount_point: mountPoint,
-                                                type: 'ldap',
-                                                description: 'ldap auth'
-                                            });
-                }
-            })
-            .then(function () {
-                console.log('Logging in as ' + username);
-                vault.ldapLogin({username: username, password: password}).then(function (loginResult) {
-                    var authObject = loginResult.auth;
-                    var token = jwt.sign({
-                                             username: authObject.metadata.username,
-                                             client_token: authObject.client_token
-                                         }, secret, {expiresIn: '2 days'});
-                    res.status(200).send(token);
-                }).catch(function (err) {
-                    console.log('Login unsuccessful.');
-                    res.status(err.statusCode).json(err);
-                });
-            }).catch(function (err) {
+        vault.read('').then(function(key) {
+
+        }).catch(function (err) {
             console.error('Error: ' + err.message);
             res.status(500).send('Unable to login. \n' + err.message + '\n');
         });
