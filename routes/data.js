@@ -15,7 +15,7 @@ var vaultOptions = {
 var vault = require('node-vault')(vaultOptions)
 
 // Load the Dat client.
-var dat = require('dat')
+var Dat = require('dat')
 
 // For MongoDB value purposes.
 var uuid = require('uuid/v4')
@@ -29,8 +29,16 @@ var Minio = require('minio')
 var MongoClient = require('mongodb').MongoClient
 
 /* GET dat file. */
-router.get('/api/v1/dat/:hashval', function(req, res, next) {
+router.get('/api/v1/dat/:hashval/:path', function(req, res, next) {
   var datHash = req.params.hashval
+  var pathPrefix = '/'
+
+  var requestPath = req.params.path
+
+  var datPath =
+    (requestPath.substr(0, pathPrefix.length) !== pathPrefix ? '/' : '') +
+    requestPath
+
   // Call CAOM-2 Repo (caom2repo) to check authorization for user.
 
   // If CAOM-2 authorizes access to this user, then obtain the Object Store key(s) from Vault.
@@ -44,35 +52,40 @@ router.get('/api/v1/dat/:hashval', function(req, res, next) {
     }
   })
 
-  var dest = path.join(__dirname, 'tmp')
+  var dest = path.join('/tmp', 'tmp_' + randomString.generate(4))
   fs.mkdirSync(dest)
 
-  dat(dest, { key: datHash, sparse: true }, function(err, _dat) {
+  Dat(dest, { key: datHash, sparse: true }, function(err, dat) {
     if (err) {
       throw err
-    }
-
-    var network = _dat.joinNetwork()
-    network.once('connection', function() {
-      console.log('Connected')
-    })
-
-    _dat.archive.metadata.update(download)
-
-    function download() {
-      var progress = mirror({ fs: _dat.archive, name: '/' }, dest, function(
-        err
-      ) {
+    } else {
+      dat.joinNetwork(function(err) {
         if (err) {
           throw err
         }
 
-        console.log('Done')
-      })
-      progress.on('put', function(src) {
-        console.log('Downloading', src.name)
+        // After the first round of network checks, the callback is called
+        // If no one is online, you can exit and let the user know.
+        if (!dat.network.connected || !dat.network.connecting) {
+          console.error('No users currently online for that key.')
+          process.exit(1)
+        } else {
+          console.log('Connected to ' + dat.network)
+        }
       })
     }
+
+    console.log(`\nGetting file from path ${datPath}...\n`)
+
+    // Manually download files via the hyperdrive API:
+    dat.archive.readFile(datPath, function(err, content) {
+      if (err) {
+        throw err
+      }
+
+      console.log('Receiving content.')
+      console.log(content)
+    })
   })
 })
 
